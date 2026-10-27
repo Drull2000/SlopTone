@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="[0,)"
+license="SlopTone License 1.0 (c) manstruk - see LICENSE.txt"
+
+[[mods]]
+modId="sloptone"
+version="1.0.3"
+displayName="SlopTone"
+displayTest="IGNORE_ALL_VERSION"
+description='''
+SlopTone — бот-навигатор для Minecraft 26.3 (Forge).
+Команды пишутся в чат через # на русском или английском: #помощь / #help
+'''
+authors="manstruk"
+
+[[dependencies.sloptone]]
+modId="forge"
+mandatory=true
+versionRange="[66,)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.sloptone]]
+modId="minecraft"
+mandatory=true
+versionRange="[26.3,26.4)"
+ordering="NONE"
+side="CLIENT"

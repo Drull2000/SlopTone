@@ -1,0 +1,58 @@
+# SlopTone
+
+A Baritone-style pathfinding bot for **Minecraft 26.3 (Forge 66)** by **manstruk**.
+Commands are typed in chat with `#` — in Russian or English.
+
+Бот-навигатор в стиле Baritone для **Minecraft 26.3 (Forge 66)** от **manstruk**.
+Команды пишутся в чат через `#` — на русском или английском.
+
+## Install / Установка
+
+1. Install Forge 26.3 (66.0.2 or newer). / Установи Forge 26.3 (66.0.2 или новее).
+2. Download `sloptone-1.0.3.jar` from [Releases](../../releases) and put it into `.minecraft/mods`.
+   / Скачай `sloptone-1.0.3.jar` из [Releases](../../releases) и положи в `.minecraft/mods`.
+3. Join a world and type `#help` (or `#помощь`). / Зайди в мир и напиши `#помощь`.
+
+## Commands / Команды
+
+| English | Русский | What it does / Что делает |
+|---|---|---|
+| `#goto x y z`, `#goto x z`, `#goto y`, `#goto <block>` | `#иди …` | walk to coordinates, a Y level or the nearest block / идти к координатам, высоте или блоку |
+| `#mine <blocks…> [count]` | `#копай алмазы 10` | find and mine blocks, pick up drops / искать и добывать блоки |
+| `#follow [name]` | `#следуй [ник]` | follow a player / следовать за игроком |
+| `#farm [radius]` | `#ферма [радиус]` | harvest and replant crops / собирать урожай и сажать |
+| `#tunnel [h w length]` | `#тоннель [в ш длина]` | dig a straight tunnel / копать прямой тоннель |
+| `#explore`, `#surface`, `#thisway 200`, `#axis` | `#исследуй`, `#наверх`, `#туда 200`, `#ось` | explore, get to the surface, go forward, go to an axis |
+| `#sethome` / `#home`, `#back` | `#дом` / `#домой`, `#назад` | home point, return to the last death point |
+| `#wp save/goto/list/del <name>` | `#метка сохранить/иди/список/удалить <имя>` | waypoints / метки |
+| `#stop`, `#pause`, `#resume`, `#status` | `#стоп`, `#пауза`, `#продолжить`, `#статус` | control the bot / управление |
+| `#set [name] [value]` | `#настройка [имя] [значение]` | settings / настройки |
+
+Russian block names work too: `алмазы`, `железо`, `золото`, `уголь`, `дерево`, `незерит`…
+
+## Features / Возможности
+
+- A* pathfinding on a background thread: walking, sprinting, diagonals, jumping up, falling,
+  swimming, ladders, breaking blocks, bridging and pillaring.
+- Mining goes to the best Y level for the ore and branch-mines when nothing is visible.
+- Auto tool, auto eat, does not break nearly broken tools, avoids digging into lava.
+- "Legit" mining mode (only exposed ores), death waypoint, path shown with particles.
+
+## Build / Сборка
+
+No Gradle needed: `build.ps1` compiles against the Forge 26.3 install of the local launcher
+(`%APPDATA%\.minecraft`) using its bundled Java 25.
+
+```powershell
+./build.ps1
+```
+
+The jar is written to `build/sloptone-1.0.3.jar`.
+
+## License / Лицензия
+
+SlopTone License 1.0 — see [LICENSE.txt](LICENSE.txt) (Russian translation: [LICENSE_RU.txt](LICENSE_RU.txt)).
+Free to play with and to include unmodified in free modpacks; no re-uploads, paid use or forks
+without the author's permission.
+
+Many servers do not allow bots like this — check the rules first.

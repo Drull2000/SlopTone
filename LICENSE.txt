@@ -1,0 +1,43 @@
+SLOPTONE LICENSE, version 1.0
+Copyright (c) 2026 manstruk. All rights reserved, except as stated below.
+
+This license applies to the SlopTone mod for Minecraft: its files (.jar),
+source code, name and description (the "Mod").
+
+1. WHAT YOU MAY DO WITHOUT ASKING
+   1.1. Download the Mod and play with it, free of charge, in singleplayer and on any server.
+   1.2. Include the Mod in modpacks, including public ones, provided that:
+        - the modpack is free;
+        - the Mod is not modified;
+        - the modpack description credits "SlopTone by manstruk".
+   1.3. Make videos, streams and screenshots featuring the Mod, including monetized ones.
+   1.4. Read the source code to learn from it, and modify it for your own private use,
+        as long as you do not publish the modified version.
+
+2. WHAT YOU MAY NOT DO WITHOUT THE AUTHOR'S WRITTEN PERMISSION
+   2.1. Re-upload the Mod to other websites, channels or file hosts
+        (share a link to the original page instead).
+   2.2. Sell the Mod or access to it, include it in paid modpacks, or put it behind a paywall.
+   2.3. Publish modified versions of the Mod (forks) or your own mods built on its code.
+   2.4. Present the Mod or any part of it as your own work, or remove or change the author's name.
+   2.5. Use the name "SlopTone" for other projects.
+
+3. ATTRIBUTION
+   Any permitted use must keep the credit "SlopTone by manstruk",
+   and this license file must not be removed from the Mod.
+
+4. NO WARRANTY
+   The Mod is provided "as is", without warranty of any kind. The author does not promise
+   that it works without errors and is not liable for lost items, broken worlds, server bans
+   or any other damage resulting from its use. Check a server's rules before using the bot
+   there: many servers do not allow mods like this.
+
+5. OTHER TERMS
+   5.1. The author may personally grant any permission from section 2; such a permission
+        applies only to the person it was granted to.
+   5.2. Anyone who violates this license loses the right to use the Mod.
+   5.3. The author may publish a new version of this license; it applies to new versions of the Mod.
+   5.4. This English text is the official version of the license. A Russian translation is
+        provided in LICENSE_RU.txt for convenience.
+
+Contact the author: manstruk.
