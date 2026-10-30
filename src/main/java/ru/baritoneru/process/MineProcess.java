@@ -49,6 +49,8 @@ public final class MineProcess extends BotProcess {
     private int mined;
     private final List<BlockPos> known = new ArrayList<>();
     private final Set<BlockPos> blacklist = new HashSet<>();
+    /** cached "placed by a player" verdicts, by position */
+    private final Map<Long, Boolean> built = new HashMap<>();
     private int scanCooldown;
     private Goal goal;
     private Goal branchGoal;
@@ -188,10 +190,17 @@ public final class MineProcess extends BotProcess {
     }
 
     private void scan(Bot bot) {
-        List<BlockPos> found = find(bot.mc.level, bot.controls.feet(), targets, Settings.mineScanRadius, Settings.legitMine);
-        found.removeIf(blacklist::contains);
+        var level = bot.mc.level;
+        List<BlockPos> found = find(level, bot.controls.feet(), targets, Settings.mineScanRadius, Settings.legitMine);
         known.clear();
-        known.addAll(found.subList(0, Math.min(found.size(), 128)));
+        // nearest first; the "built by a player" check is not free, so only run it until the list is full
+        for (BlockPos p : found) {
+            if (known.size() >= 128) break;
+            if (blacklist.contains(p)) continue;
+            if (Settings.ignorePlaced && built.computeIfAbsent(p.asLong(),
+                    k -> ru.baritoneru.PlacedBlocks.isBuilt(level, p, level.getBlockState(p)))) continue;
+            known.add(p);
+        }
     }
 
     /** All matching blocks in loaded chunks around {@code feet}, nearest first. */

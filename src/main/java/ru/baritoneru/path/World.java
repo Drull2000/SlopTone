@@ -50,7 +50,12 @@ public final class World {
         this.tools = hotbarCopy;
         this.hasThrowaway = hasThrowaway;
         this.extraAvoid = extraAvoid;
+        this.placed = ru.baritoneru.PlacedBlocks.current();
     }
+
+    /** blocks players built; the pathfinder walks around them instead of breaking through */
+    private final Set<Long> placed;
+    private static final double BUILT_PENALTY = 400;
 
     public boolean hasThrowaway() { return hasThrowaway; }
 
@@ -148,6 +153,7 @@ public final class World {
             if (isLava(n)) return INF;
         }
         double extra = 0;
+        if (Settings.ignorePlaced && placed.contains(BlockPos.asLong(x, y, z))) extra += BUILT_PENALTY;
         BlockState above = get(x, y + 1, z);
         if (above != null) {
             if (isWater(above)) extra += 40;

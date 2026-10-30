@@ -60,9 +60,35 @@ public final class BlockNames {
         add(of(Blocks.END_PORTAL_FRAME), "энд_портал", "рамка_портала");
         add(() -> tagged(BlockTags.BEDS), "кровать", "кровати", "bed");
         add(() -> tagged(BlockTags.LOGS), "дерево", "деревья", "бревно", "бревна", "брёвна", "древесина", "log", "logs", "wood");
+        // wood by species; "ё" is normalised to "е" before lookup, so only the "е" spelling is needed
+        wood(Blocks.OAK_LOG, Blocks.OAK_WOOD, "дуб", "дубовое", "дубовая", "дубовые", "oak");
+        wood(Blocks.BIRCH_LOG, Blocks.BIRCH_WOOD, "береза", "березы", "березовое", "березовая", "березовые", "birch");
+        wood(Blocks.SPRUCE_LOG, Blocks.SPRUCE_WOOD, "ель", "елка", "ели", "еловое", "еловая", "еловые", "spruce");
+        wood(Blocks.JUNGLE_LOG, Blocks.JUNGLE_WOOD, "тропическое", "тропическая", "тропические", "джунгли", "jungle");
+        wood(Blocks.ACACIA_LOG, Blocks.ACACIA_WOOD, "акация", "акации", "акациевое", "акациевая", "acacia");
+        wood(Blocks.DARK_OAK_LOG, Blocks.DARK_OAK_WOOD, "темный_дуб", "темного_дуба", "темное_дубовое", "темная_дубовая", "dark_oak");
+        wood(Blocks.PALE_OAK_LOG, Blocks.PALE_OAK_WOOD, "бледный_дуб", "бледного_дуба", "бледное_дубовое", "бледная_дубовая", "pale_oak");
+        wood(Blocks.CHERRY_LOG, Blocks.CHERRY_WOOD, "вишня", "вишни", "вишневое", "вишневая", "сакура", "cherry");
+        wood(Blocks.MANGROVE_LOG, Blocks.MANGROVE_WOOD, "мангр", "мангровое", "мангровая", "мангровые", "mangrove");
+        wood(Blocks.POPLAR_LOG, Blocks.POPLAR_WOOD, "тополь", "тополя", "тополиное", "тополиная", "poplar");
+        add(of(Blocks.CRIMSON_STEM), "багровый_стебель", "багровые_стебли", "багровое_дерево", "crimson");
+        add(of(Blocks.WARPED_STEM), "искаженный_стебель", "искаженные_стебли", "искаженное_дерево", "warped");
         add(() -> tagged(BlockTags.LEAVES), "листва", "листья", "leaves");
         add(() -> tagged(BlockTags.PLANKS), "доски", "planks");
         add(() -> tagged(BlockTags.WOOL), "шерсть", "wool");
+    }
+
+    /**
+     * Registers one tree species. Each word also works followed by бревно/бревна/древесина/дерево,
+     * e.g. "береза", "березовое_бревно", "березовая_древесина", "березовые_бревна".
+     */
+    private static void wood(Block log, Block wood, String... words) {
+        Supplier<Set<Block>> s = of(log, wood);
+        for (String w : words) {
+            add(s, w);
+            for (String suffix : new String[]{"_бревно", "_бревна", "_древесина", "_дерево", "_деревья", "_log", "_logs", "_wood"})
+                add(s, w + suffix);
+        }
     }
 
     private static Set<Block> tagged(net.minecraft.tags.TagKey<Block> tag) {

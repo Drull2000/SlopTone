@@ -272,6 +272,8 @@ public final class Controls {
             if (!mc.player.isShiftKeyDown()) return false;
         }
         InteractionResult r = mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, new BlockHitResult(hitVec, face, against, false));
+        // the bot's own bridges and pillars are not "builds": it may dig through them later
+        if (r.consumesAction()) PlacedBlocks.forgetSoon(against.relative(face));
         return r.consumesAction();
     }
 

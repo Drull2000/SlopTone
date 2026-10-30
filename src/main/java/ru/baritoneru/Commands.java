@@ -87,7 +87,7 @@ public final class Commands {
                 Commands::cmdSet, "set", "setting", "settings", "настройка", "настройки", "опция");
         reg("статус", "что сейчас делаю", (b, a) -> Bot.msg(b.status()), "status", "proc", "статус", "что");
         reg("помощь", "список команд", (b, a) -> help(), "help", "помощь", "справка", "команды", "?");
-        reg("версия", "версия мода", (b, a) -> Bot.msg("SlopTone 1.0.3 by manstruk, Minecraft 26.3 (Forge)"), "version", "версия");
+        reg("версия", "версия мода", (b, a) -> Bot.msg("SlopTone 1.0.4 by manstruk, Minecraft 26.3 (Forge)"), "version", "версия");
     }
 
     /** @return true when the message was a bot command (it is then not sent to the server). */
@@ -102,7 +102,8 @@ public final class Commands {
             help();
             return true;
         }
-        List<String> parts = new ArrayList<>(Arrays.asList(body.split("\\s+")));
+        // commas separate words too: "#копай birch_log, birch_wood 3", "#иди 100, 64, -20"
+        List<String> parts = new ArrayList<>(Arrays.asList(body.split("[\\s,]+")));
         String name = parts.remove(0).toLowerCase(Locale.ROOT).replace('ё', 'е');
         Cmd cmd = BY_NAME.get(name);
         if (cmd == null) {

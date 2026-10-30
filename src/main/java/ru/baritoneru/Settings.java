@@ -25,6 +25,7 @@ public final class Settings {
     public static volatile int mineScanRadius = 64;
     public static volatile boolean mineGoToY = true;
     public static volatile boolean legitMine = false;
+    public static volatile boolean ignorePlaced = true;
     public static volatile boolean stopWhenInventoryFull = true;
     public static volatile int followRadius = 3;
     public static volatile int farmRadius = 32;
@@ -55,6 +56,7 @@ public final class Settings {
         integer("mineScanRadius", "радиус поиска руды", "радиус", 16, 160, () -> mineScanRadius, v -> mineScanRadius = v);
         bool("mineGoToY", "идти на лучшую высоту для руды и копать ветку", "высота", () -> mineGoToY, v -> mineGoToY = v);
         bool("legitMine", "копать только видимую руду (без x-ray)", "честно", () -> legitMine, v -> legitMine = v);
+        bool("ignorePlaced", "не копать и не ломать постройки игроков", "постройки", () -> ignorePlaced, v -> ignorePlaced = v);
         bool("stopWhenInventoryFull", "останавливаться при полном инвентаре", "полный", () -> stopWhenInventoryFull, v -> stopWhenInventoryFull = v);
         integer("followRadius", "дистанция следования", "дистанция", 1, 16, () -> followRadius, v -> followRadius = v);
         integer("farmRadius", "радиус фермы", "ферма", 4, 96, () -> farmRadius, v -> farmRadius = v);

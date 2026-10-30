@@ -87,6 +87,7 @@ public final class Bot {
         if (auto != null && tickCount == 100) for (String s : auto.split(";")) p.connection.sendChat(s.trim());
         controls.clear();
         waypoints.tick(this);
+        PlacedBlocks.tick();
 
         if (p.isDeadOrDying()) {
             if (!wasDead) {

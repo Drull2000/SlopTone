@@ -18,6 +18,7 @@ public final class BaritoneRu {
         TickEvent.ClientTickEvent.Post.BUS.addListener(e -> Bot.get().postTick());
         // returning true cancels the chat message, so commands are never sent to the server
         ClientChatEvent.BUS.addListener((ClientChatEvent e) -> Commands.handleChat(e.getMessage()));
+        PlacedBlocks.register();
         LOG.info("SlopTone: listeners registered, command prefix '{}'", Settings.prefix);
     }
 }

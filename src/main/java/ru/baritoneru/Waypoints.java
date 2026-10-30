@@ -24,13 +24,18 @@ public final class Waypoints {
         }
     }
 
-    private static String world() {
+    /** Identifies the server/world and dimension the client is in, e.g. "sp:Новый мир/ResourceKey[...overworld]". */
+    static String world() {
         Minecraft mc = Minecraft.getInstance();
         String server;
         if (mc.getCurrentServer() != null) server = mc.getCurrentServer().ip;
         else if (mc.getSingleplayerServer() != null) server = "sp:" + mc.getSingleplayerServer().getWorldData().getLevelName();
         else server = "?";
         String dim = mc.level == null ? "?" : mc.level.dimension().toString();
+        return worldKey(server, dim);
+    }
+
+    static String worldKey(String server, String dim) {
         return (server + "/" + dim).replace('|', '_');
     }
 
