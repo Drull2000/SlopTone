@@ -33,7 +33,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * Logs get an extra check that works everywhere: a tree trunk always has natural (non-persistent) leaves nearby.
  */
 public final class PlacedBlocks {
-    private static final Map<String, Set<Long>> BY_WORLD = new ConcurrentHashMap<>();
+    /** who placed a block and when (epoch millis); who is "?" for entries saved by older versions */
+    public record Info(String who, long time) {}
+
+    private static final Map<String, Map<Long, Info>> BY_WORLD = new ConcurrentHashMap<>();
     private static final List<Pending> PENDING = new ArrayList<>();
     private static volatile boolean dirty;
     private static boolean loaded;
@@ -43,7 +46,8 @@ public final class PlacedBlocks {
 
     public static void register() {
         BlockEvent.EntityPlaceEvent.BUS.addListener((BlockEvent.EntityPlaceEvent e) -> {
-            if (e.getEntity() instanceof Player && e.getLevel() instanceof ServerLevel l) add(serverKey(l), e.getPos());
+            if (e.getEntity() instanceof Player p && e.getLevel() instanceof ServerLevel l)
+                add(serverKey(l), e.getPos(), p.getName().getString());
         });
         BlockEvent.BreakEvent.BUS.addListener((BlockEvent.BreakEvent e) -> {
             if (e.getLevel() instanceof ServerLevel l) remove(serverKey(l), e.getPos());
@@ -57,30 +61,46 @@ public final class PlacedBlocks {
         return Waypoints.worldKey("sp:" + l.getServer().getWorldData().getLevelName(), l.dimension().toString());
     }
 
-    private static Set<Long> set(String key) {
-        return BY_WORLD.computeIfAbsent(key, k -> ConcurrentHashMap.newKeySet());
+    private static Map<Long, Info> map(String key) {
+        return BY_WORLD.computeIfAbsent(key, k -> new ConcurrentHashMap<>());
     }
 
-    private static void add(String key, BlockPos pos) {
-        if (set(key).add(pos.asLong())) dirty = true;
+    private static void add(String key, BlockPos pos, String who) {
+        map(key).put(pos.asLong(), new Info(who, System.currentTimeMillis()));
+        dirty = true;
     }
 
     private static void remove(String key, BlockPos pos) {
-        Set<Long> s = BY_WORLD.get(key);
-        if (s != null && s.remove(pos.asLong())) dirty = true;
+        Map<Long, Info> m = BY_WORLD.get(key);
+        if (m != null && m.remove(pos.asLong()) != null) dirty = true;
     }
 
     /** Placed blocks of the world the client is in now. Safe to read from the pathfinder thread. */
     public static Set<Long> current() {
-        return set(Waypoints.world());
+        return map(Waypoints.world()).keySet();
     }
 
     public static boolean isPlaced(BlockPos pos) {
         return current().contains(pos.asLong());
     }
 
+    /** Who placed the block, or null if nobody is known to have placed it. */
+    public static Info info(BlockPos pos) {
+        return map(Waypoints.world()).get(pos.asLong());
+    }
+
     private static void markPlaced(BlockPos pos) {
-        add(Waypoints.world(), pos);
+        Minecraft mc = Minecraft.getInstance();
+        add(Waypoints.world(), pos, mc.player == null ? "?" : mc.player.getName().getString());
+    }
+
+    /** Is this a log that has no natural leaves around it (i.e. most likely part of a build)? */
+    public static boolean isLogWithoutTree(Level level, BlockPos pos, BlockState state) {
+        return isLog(state.getBlock()) && !hasNaturalLeavesNear(level, pos);
+    }
+
+    public static boolean isLogBlock(BlockState state) {
+        return isLog(state.getBlock());
     }
 
     /** positions the bot placed itself; the built-in server reports them a moment later, so keep removing them */
@@ -172,9 +192,14 @@ public final class PlacedBlocks {
             for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
                 int i = line.lastIndexOf('|');
                 if (i <= 0) continue;
-                Set<Long> s = set(line.substring(0, i));
+                Map<Long, Info> m = map(line.substring(0, i));
+                // entry = pos[:who:time]; 1.0.4 saved only the position
                 for (String n : line.substring(i + 1).split(",")) {
-                    if (!n.isBlank()) s.add(Long.parseLong(n.trim()));
+                    if (n.isBlank()) continue;
+                    String[] p = n.trim().split(":", 3);
+                    String who = p.length > 1 ? p[1] : "?";
+                    long time = p.length > 2 ? Long.parseLong(p[2]) : 0;
+                    m.put(Long.parseLong(p[0]), new Info(who, time));
                 }
             }
         } catch (Exception ignored) {
@@ -190,8 +215,11 @@ public final class PlacedBlocks {
             for (var e : BY_WORLD.entrySet()) {
                 if (e.getValue().isEmpty()) continue;
                 StringBuilder sb = new StringBuilder(e.getKey()).append('|');
-                for (Iterator<Long> it = e.getValue().iterator(); it.hasNext(); ) {
-                    sb.append(it.next());
+                for (Iterator<Map.Entry<Long, Info>> it = e.getValue().entrySet().iterator(); it.hasNext(); ) {
+                    var en = it.next();
+                    // player names are [A-Za-z0-9_], so ':' and ',' are safe separators
+                    sb.append(en.getKey()).append(':').append(en.getValue().who().replaceAll("[:,|]", "_"))
+                            .append(':').append(en.getValue().time());
                     if (it.hasNext()) sb.append(',');
                 }
                 lines.add(sb.toString());

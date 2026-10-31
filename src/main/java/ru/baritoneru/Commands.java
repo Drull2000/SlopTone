@@ -85,9 +85,11 @@ public final class Commands {
                 Commands::cmdWaypoint, "waypoint", "waypoints", "wp", "метка", "метки", "точка", "точки");
         reg("настройка [имя] [значение]", "показать/изменить настройки",
                 Commands::cmdSet, "set", "setting", "settings", "настройка", "настройки", "опция");
+        reg("кто", "кто поставил блок, на который смотрит прицел", Commands::cmdWho,
+                "who", "owner", "кто", "чей", "ктопоставил");
         reg("статус", "что сейчас делаю", (b, a) -> Bot.msg(b.status()), "status", "proc", "статус", "что");
         reg("помощь", "список команд", (b, a) -> help(), "help", "помощь", "справка", "команды", "?");
-        reg("версия", "версия мода", (b, a) -> Bot.msg("SlopTone 1.0.4 by manstruk, Minecraft 26.3 (Forge)"), "version", "версия");
+        reg("версия", "версия мода", (b, a) -> Bot.msg("SlopTone 1.0.5 by manstruk, Minecraft 26.3 (Forge)"), "version", "версия");
     }
 
     /** @return true when the message was a bot command (it is then not sent to the server). */
@@ -292,6 +294,38 @@ public final class Commands {
                 gotoWaypoint(b, String.join("_", a));
             }
         }
+    }
+
+    private static void cmdWho(Bot b, List<String> a) throws CommandException {
+        if (!(b.mc.hitResult instanceof net.minecraft.world.phys.BlockHitResult hit)
+                || hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK)
+            throw new CommandException("Наведи прицел на блок.");
+        BlockPos pos = hit.getBlockPos();
+        var state = b.mc.level.getBlockState(pos);
+        String what = "§e" + state.getBlock().getName().getString() + "§r на " + pos.toShortString();
+        PlacedBlocks.Info info = PlacedBlocks.info(pos);
+        if (info != null) {
+            String who = info.who().equals("?") ? "игрок (ник не записан — блок поставлен на версии 1.0.5)" : "§a" + info.who() + "§r";
+            Bot.msg(what + " поставил " + who + (info.time() > 0 ? ", " + ago(info.time()) : "") + ".");
+            return;
+        }
+        if (PlacedBlocks.isLogBlock(state)) {
+            Bot.msg(PlacedBlocks.isLogWithoutTree(b.mc.level, pos, state)
+                    ? what + ": записи нет, но рядом нет природной листвы — скорее всего, его поставил игрок. Кто — неизвестно."
+                    : what + ": природный, это дерево.");
+            return;
+        }
+        boolean remote = b.mc.getSingleplayerServer() == null;
+        Bot.msg(what + ": записи нет. Блок природный или поставлен, когда мод не был запущен."
+                + (remote ? " На сервере видны только блоки, которые поставил ты сам." : ""));
+    }
+
+    private static String ago(long time) {
+        long s = Math.max(0, (System.currentTimeMillis() - time) / 1000);
+        if (s < 60) return "только что";
+        if (s < 3600) return (s / 60) + " мин назад";
+        if (s < 86400) return (s / 3600) + " ч назад";
+        return (s / 86400) + " дн назад";
     }
 
     private static void cmdSet(Bot b, List<String> a) throws CommandException {

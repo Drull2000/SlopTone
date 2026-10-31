@@ -9,8 +9,8 @@ Commands are typed in chat with `#` — in Russian or English.
 ## Install / Установка
 
 1. Install Forge 26.3 (66.0.2 or newer). / Установи Forge 26.3 (66.0.2 или новее).
-2. Download `sloptone-1.0.4.jar` from [Releases](../../releases) and put it into `.minecraft/mods`.
-   / Скачай `sloptone-1.0.4.jar` из [Releases](../../releases) и положи в `.minecraft/mods`.
+2. Download `sloptone-1.0.5.jar` from [Releases](../../releases) and put it into `.minecraft/mods`.
+   / Скачай `sloptone-1.0.5.jar` из [Releases](../../releases) и положи в `.minecraft/mods`.
 3. Join a world and type `#help` (or `#помощь`). / Зайди в мир и напиши `#помощь`.
 
 ## Commands / Команды
@@ -27,6 +27,7 @@ Commands are typed in chat with `#` — in Russian or English.
 | `#wp save/goto/list/del <name>` | `#метка сохранить/иди/список/удалить <имя>` | waypoints / метки |
 | `#stop`, `#pause`, `#resume`, `#status` | `#стоп`, `#пауза`, `#продолжить`, `#статус` | control the bot / управление |
 | `#set [name] [value]` | `#настройка [имя] [значение]` | settings / настройки |
+| `#who` | `#кто` | who placed the block under the crosshair, and when / кто и когда поставил блок под прицелом |
 
 Russian block names work too: `алмазы`, `железо`, `золото`, `уголь`, `дерево`, `незерит`…
 Tree species too / породы деревьев: `береза`, `дуб`, `ель`, `акация`, `темный дуб`, `бледный дуб`, `вишня`,
@@ -42,6 +43,8 @@ breaking through (`#set ignorePlaced false` / `#настройка постро�
 - Singleplayer / LAN host: every block placed by any player is recorded exactly.
 - Remote servers: your own placements are recorded; trees are told apart from log houses by their
   natural leaves, which works everywhere.
+- `#who` / `#кто` shows the recorded player name and time. Minecraft itself does not store who placed
+  a block, so only blocks placed while SlopTone 1.0.5+ was running are known.
 
 ## Features / Возможности
 
@@ -60,7 +63,7 @@ No Gradle needed: `build.ps1` compiles against the Forge 26.3 install of the loc
 ./build.ps1
 ```
 
-The jar is written to `build/sloptone-1.0.4.jar`.
+The jar is written to `build/sloptone-1.0.5.jar`.
 
 ## License / Лицензия
 

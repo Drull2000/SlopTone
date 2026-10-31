@@ -4,7 +4,7 @@ license="SlopTone License 1.0 (c) manstruk - see LICENSE.txt"
 
 [[mods]]
 modId="sloptone"
-version="1.0.4"
+version="1.0.5"
 displayName="SlopTone"
 displayTest="IGNORE_ALL_VERSION"
 description='''
