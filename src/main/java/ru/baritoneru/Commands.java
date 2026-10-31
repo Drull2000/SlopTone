@@ -102,7 +102,7 @@ public final class Commands {
                 "whose", "builds", "чьи", "постройки", "подсветить");
         reg("статус", "что сейчас делаю", (b, a) -> Bot.msg(b.status()), "status", "proc", "статус", "что");
         reg("помощь", "список команд", (b, a) -> help(), "help", "помощь", "справка", "команды", "?");
-        reg("версия", "версия мода", (b, a) -> Bot.msg("SlopTone 1.0.9 by manstruk, Minecraft 26.3 (Forge)"), "version", "версия");
+        reg("версия", "версия мода", (b, a) -> Bot.msg("SlopTone 1.0.10 by manstruk, Minecraft 26.3 (Forge)"), "version", "версия");
     }
 
     /** @return true when the message was a bot command (it is then not sent to the server). */
@@ -318,7 +318,7 @@ public final class Commands {
         String what = "§e" + state.getBlock().getName().getString() + "§r на " + pos.toShortString();
         PlacedBlocks.Info info = PlacedBlocks.info(pos);
         if (info != null) {
-            String who = info.who().equals("?") ? "игрок (ник не записан — блок поставлен на версии 1.0.9)" : "§a" + info.who() + "§r";
+            String who = info.who().equals("?") ? "игрок (ник не записан — блок поставлен на версии 1.0.10)" : "§a" + info.who() + "§r";
             Bot.msg(what + " поставил " + who + (info.time() > 0 ? ", " + ago(info.time()) : "") + ".");
             return;
         }

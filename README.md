@@ -1,3 +1,5 @@
+![SlopTone](docs/banner.png)
+
 # SlopTone
 
 A Baritone-style pathfinding bot for **Minecraft 26.3 (Forge 66)** by **manstruk**.
@@ -9,8 +11,8 @@ Commands are typed in chat with `#` — in Russian or English.
 ## Install / Установка
 
 1. Install Forge 26.3 (66.0.2 or newer). / Установи Forge 26.3 (66.0.2 или новее).
-2. Download `sloptone-1.0.9.jar` from [Releases](../../releases) and put it into `.minecraft/mods`.
-   / Скачай `sloptone-1.0.9.jar` из [Releases](../../releases) и положи в `.minecraft/mods`.
+2. Download `sloptone-1.0.10.jar` from [Releases](../../releases) and put it into `.minecraft/mods`.
+   / Скачай `sloptone-1.0.10.jar` из [Releases](../../releases) и положи в `.minecraft/mods`.
 3. Join a world and type `#help` (or `#помощь`). / Зайди в мир и напиши `#помощь`.
 
 ## Commands / Команды
@@ -119,7 +121,7 @@ No Gradle needed: `build.ps1` compiles against the Forge 26.3 install of the loc
 ./build.ps1
 ```
 
-The jar is written to `build/sloptone-1.0.9.jar`.
+The jar is written to `build/sloptone-1.0.10.jar`.
 
 ## License / Лицензия
 

@@ -326,7 +326,7 @@ public final class SlopScreen extends Screen {
         }
         text(g, "Slop", x0 + 10, y0 + 9, ACCENT);
         text(g, "Tone", x0 + 10 + font.width("Slop"), y0 + 9, TEXT);
-        text(g, "1.0.9", x0 + 14 + font.width("SlopTone"), y0 + 9, FAINT);
+        text(g, "1.0.10", x0 + 14 + font.width("SlopTone"), y0 + 9, FAINT);
 
         Bot bot = Bot.get();
         boolean active = bot.process() != null, paused = bot.isPaused();

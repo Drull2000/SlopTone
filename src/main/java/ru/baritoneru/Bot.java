@@ -99,6 +99,7 @@ public final class Bot {
             if (s.startsWith("!wait ")) autoWaitUntil = tickCount + Integer.parseInt(s.substring(6).trim());
             else if (s.equals("!shot")) net.minecraft.client.Screenshot.grab(mc, false);
             else if (s.equals("!lang")) ru.baritoneru.gui.Ui.en = !ru.baritoneru.gui.Ui.en;
+            else if (s.equals("!mods")) mc.gui.setScreen(new net.minecraftforge.client.gui.ModListScreen(null));
             else if (s.startsWith("!menu")) ru.baritoneru.gui.SlopScreen.debugOpen(s.substring(5).trim());
             else if (s.startsWith("/")) p.connection.sendCommand(s.substring(1));
             else p.connection.sendChat(s);
