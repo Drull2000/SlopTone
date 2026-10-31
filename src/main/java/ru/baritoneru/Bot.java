@@ -33,12 +33,21 @@ public final class Bot {
     private int eatTicks;
     private int prevSlot = -1;
     private long tickCount;
+    /** test hook queue (-Dsloptone.autorun): commands, "!wait N", "!shot", "!menu [category] [input]" */
+    private final java.util.ArrayDeque<String> autoQueue = new java.util.ArrayDeque<>();
+    private long autoWaitUntil;
 
     public BotProcess process() { return process; }
 
     public boolean isPaused() { return paused; }
 
+    /** last messages, newest first, shown at the bottom of the menu */
+    public static final java.util.Deque<String> RECENT = new java.util.ArrayDeque<>();
+
     public static void msg(String text) {
+        RECENT.addFirst(text);
+        while (RECENT.size() > 8) RECENT.removeLast();
+        LogBook.add(LogBook.Type.BOT, LogBook.stripCodes(text));
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) mc.player.sendSystemMessage(Component.literal("§3[§bSlopTone§3]§r " + text));
     }
@@ -84,9 +93,14 @@ public final class Bot {
         if (tickCount == 1) BaritoneRu.LOG.info("SlopTone: first in-world tick");
         // test hook: -Dsloptone.autorun="#cmd1;#cmd2" sends these through the real chat path
         String auto = System.getProperty("sloptone.autorun");
-        if (auto != null && tickCount == 100) for (String s : auto.split(";")) {
-            s = s.trim();
-            if (s.startsWith("/")) p.connection.sendCommand(s.substring(1));
+        if (auto != null && tickCount == 100) autoQueue.addAll(java.util.Arrays.asList(auto.split(";")));
+        if (!autoQueue.isEmpty() && tickCount >= 100 && tickCount >= autoWaitUntil) {
+            String s = autoQueue.poll().trim();
+            if (s.startsWith("!wait ")) autoWaitUntil = tickCount + Integer.parseInt(s.substring(6).trim());
+            else if (s.equals("!shot")) net.minecraft.client.Screenshot.grab(mc, false);
+            else if (s.equals("!lang")) ru.baritoneru.gui.Ui.en = !ru.baritoneru.gui.Ui.en;
+            else if (s.startsWith("!menu")) ru.baritoneru.gui.SlopScreen.debugOpen(s.substring(5).trim());
+            else if (s.startsWith("/")) p.connection.sendCommand(s.substring(1));
             else p.connection.sendChat(s);
         }
         controls.clear();

@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.event.CommandEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.BlockEvent;
@@ -46,8 +47,21 @@ public final class ServerRecorder {
         BlockEvent.BreakEvent.BUS.addListener((BlockEvent.BreakEvent e) -> {
             if (e.getLevel() instanceof ServerLevel l && map(l).remove(e.getPos().asLong()) != null) dirty = true;
         });
+        // audit log: every command anyone runs (players, console, command blocks)
+        CommandEvent.BUS.addListener((CommandEvent e) -> {
+            var parse = e.getParseResults();
+            String cmd = parse.getReader().getString();
+            if (cmd.startsWith("sloptone log")) return;
+            String who = parse.getContext().getSource().getTextName();
+            logCommand(who, cmd);
+        });
         RegisterCommandsEvent.BUS.addListener((RegisterCommandsEvent e) -> e.getDispatcher().register(
                 Commands.literal("sloptone")
+                        .then(Commands.literal("log")
+                                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                                .executes(c -> log(c, 30))
+                                .then(Commands.argument("count", IntegerArgumentType.integer(1, 200))
+                                        .executes(c -> log(c, IntegerArgumentType.getInteger(c, "count")))))
                         .then(Commands.literal("who")
                                 .then(Commands.argument("pos", BlockPosArgument.blockPos()).executes(ServerRecorder::who)))
                         .then(Commands.literal("near")
@@ -115,6 +129,40 @@ public final class ServerRecorder {
         }
         src.sendSuccess(() -> Component.literal(sb.toString()), false);
         return counts.size();
+    }
+
+    // ---------------------------------------------------------------- command audit log (ops only)
+
+    private static final java.util.ArrayDeque<String> COMMANDS = new java.util.ArrayDeque<>();
+    private static final java.time.format.DateTimeFormatter TS = java.time.format.DateTimeFormatter.ofPattern("dd.MM HH:mm:ss");
+
+    private static synchronized void logCommand(String who, String cmd) {
+        String line = "[" + java.time.LocalDateTime.now().format(TS) + "] " + who + ": /" + cmd;
+        COMMANDS.addLast(line);
+        while (COMMANDS.size() > 1000) COMMANDS.removeFirst();
+        try {
+            Path f = Settings.dir().resolve("server-commands.log");
+            Files.createDirectories(f.getParent());
+            Files.writeString(f, line + System.lineSeparator(), StandardCharsets.UTF_8,
+                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static int log(CommandContext<CommandSourceStack> c, int count) {
+        List<String> lines;
+        synchronized (ServerRecorder.class) {
+            lines = new ArrayList<>(COMMANDS);
+        }
+        CommandSourceStack src = c.getSource();
+        if (lines.isEmpty()) {
+            src.sendSuccess(() -> Component.literal("§3[§bSlopTone§3]§r Сервер: журнал команд пуст."), false);
+            return 0;
+        }
+        List<String> last = lines.subList(Math.max(0, lines.size() - count), lines.size());
+        src.sendSuccess(() -> Component.literal("§3[§bSlopTone§3]§r Сервер: последние команды (" + last.size() + "):"), false);
+        for (String l : last) src.sendSuccess(() -> Component.literal("§7[SlopTone] Сервер §r" + l), false);
+        return last.size();
     }
 
     static String ago(long time) {

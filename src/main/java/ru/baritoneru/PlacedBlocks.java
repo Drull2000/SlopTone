@@ -150,6 +150,8 @@ public final class PlacedBlocks {
     private record Watch(String who, int playerId, BlockState before, long expires) {}
 
     private static final Map<Long, Watch> WATCH = new java.util.HashMap<>();
+    /** solid blocks other players are looking at, to notice them breaking it */
+    private static final Map<Long, Watch> BREAKS = new java.util.HashMap<>();
     private static final Map<Integer, Long> LAST_SWING = new java.util.HashMap<>();
     private static long clientTicks;
 
@@ -166,6 +168,8 @@ public final class PlacedBlocks {
             if (!(pl.pick(pl.blockInteractionRange(), 1.0f, false) instanceof BlockHitResult hit)
                     || hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) continue;
             String name = pl.getName().getString();
+            BlockState target = mc.level.getBlockState(hit.getBlockPos());
+            if (!target.canBeReplaced()) BREAKS.put(hit.getBlockPos().asLong(), new Watch(name, pl.getId(), target, clientTicks + 8));
             for (BlockPos c : new BlockPos[]{hit.getBlockPos(), hit.getBlockPos().relative(hit.getDirection())}) {
                 BlockState s = mc.level.getBlockState(c);
                 if (!s.canBeReplaced()) continue; // only empty / replaceable spots can receive a placed block
@@ -179,7 +183,25 @@ public final class PlacedBlocks {
             if (now != w.before() && !now.canBeReplaced() && now.getFluidState().isEmpty()) {
                 Long swung = LAST_SWING.get(w.playerId());
                 if (swung != null && clientTicks - swung <= 8) {
-                    add(Waypoints.world(), BlockPos.of(e.getKey()), w.who());
+                    BlockPos p = BlockPos.of(e.getKey());
+                    add(Waypoints.world(), p, w.who());
+                    LogBook.add(LogBook.Type.BLOCKS, w.who() + " поставил " + now.getBlock().getName().getString() + " на " + p.toShortString());
+                }
+                it.remove();
+            } else if (clientTicks > w.expires()) {
+                it.remove();
+            }
+        }
+        for (var it = BREAKS.entrySet().iterator(); it.hasNext(); ) {
+            var e = it.next();
+            Watch w = e.getValue();
+            BlockPos p = BlockPos.of(e.getKey());
+            BlockState now = mc.level.getBlockState(p);
+            if (now.isAir() && !w.before().isAir()) {
+                Long swung = LAST_SWING.get(w.playerId());
+                if (swung != null && clientTicks - swung <= 8) {
+                    remove(Waypoints.world(), p);
+                    LogBook.add(LogBook.Type.BLOCKS, w.who() + " сломал " + w.before().getBlock().getName().getString() + " на " + p.toShortString());
                 }
                 it.remove();
             } else if (clientTicks > w.expires()) {

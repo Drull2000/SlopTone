@@ -1,4 +1,4 @@
-# Builds sloptone-1.0.6.jar against the Forge 26.3 install of the local launcher (no Gradle needed).
+# Builds sloptone-1.0.8.jar against the Forge 26.3 install of the local launcher (no Gradle needed).
 $ErrorActionPreference = 'Stop'
 $mc   = "$env:APPDATA\.minecraft"
 $jdk  = "$mc\runtime\java-runtime-epsilon\windows\java-runtime-epsilon\bin"
@@ -25,9 +25,18 @@ $argFile = "$out\javac.args"
 & "$jdk\javac.exe" "@$argFile"
 if ($LASTEXITCODE -ne 0) { throw "javac failed" }
 
+# Mixin 0.8.7 only knows class versions up to Java 21; the mixin classes use no newer features,
+# so mark them as Java 21 (major 65) class files.
+Get-ChildItem "$out\classes\ru\baritoneru\mixin" -Filter *.class | ForEach-Object {
+    $bytes = [IO.File]::ReadAllBytes($_.FullName)
+    $bytes[6] = 0; $bytes[7] = 65
+    [IO.File]::WriteAllBytes($_.FullName, $bytes)
+}
+
 Copy-Item -Recurse "$root\src\main\resources\*" "$out\classes\"
 Copy-Item "$root\LICENSE.txt", "$root\LICENSE_RU.txt" "$out\classes\"
-$jar = "$out\sloptone-1.0.6.jar"
-& "$jdk\jar.exe" --create --file $jar -C "$out\classes" .
+"MixinConfigs: sloptone.mixins.json" | Set-Content -Encoding ascii "$out\MANIFEST.MF"
+$jar = "$out\sloptone-1.0.8.jar"
+& "$jdk\jar.exe" --create --file $jar --manifest "$out\MANIFEST.MF" -C "$out\classes" .
 if ($LASTEXITCODE -ne 0) { throw "jar failed" }
 Write-Host "Built $jar"

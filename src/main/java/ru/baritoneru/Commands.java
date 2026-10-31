@@ -87,11 +87,20 @@ public final class Commands {
                 Commands::cmdSet, "set", "setting", "settings", "настройка", "настройки", "опция");
         reg("кто", "кто поставил блок, на который смотрит прицел", Commands::cmdWho,
                 "who", "owner", "кто", "чей", "ктопоставил");
+        reg("подсветка [игроки|мобы|животные|все|выкл]", "контур вокруг игроков/мобов, видно сквозь стены",
+                Commands::cmdGlow, "glow", "esp", "подсветка", "подсвети", "игроки");
+        reg("xray [вкл|выкл|все|руды...] [радиус]", "подсветить руды сквозь стены",
+                Commands::cmdXray, "xray", "иксрей", "рентген", "руды");
+        reg("логи", "журнал сервера (для операторов, если на сервере есть SlopTone)",
+                (b, a) -> {
+                    if (!askServer(b, "sloptone log " + (a.isEmpty() ? "30" : a.get(0))))
+                        Bot.msg("На этом сервере нет SlopTone — журнал команд недоступен. Клиентский журнал: Insert → Логи.");
+                }, "log", "logs", "логи", "журнал");
         reg("чьи [ник] [радиус]", "подсветить блоки, поставленные игроками рядом", Commands::cmdWhose,
                 "whose", "builds", "чьи", "постройки", "подсветить");
         reg("статус", "что сейчас делаю", (b, a) -> Bot.msg(b.status()), "status", "proc", "статус", "что");
         reg("помощь", "список команд", (b, a) -> help(), "help", "помощь", "справка", "команды", "?");
-        reg("версия", "версия мода", (b, a) -> Bot.msg("SlopTone 1.0.6 by manstruk, Minecraft 26.3 (Forge)"), "version", "версия");
+        reg("версия", "версия мода", (b, a) -> Bot.msg("SlopTone 1.0.8 by manstruk, Minecraft 26.3 (Forge)"), "version", "версия");
     }
 
     /** @return true when the message was a bot command (it is then not sent to the server). */
@@ -307,7 +316,7 @@ public final class Commands {
         String what = "§e" + state.getBlock().getName().getString() + "§r на " + pos.toShortString();
         PlacedBlocks.Info info = PlacedBlocks.info(pos);
         if (info != null) {
-            String who = info.who().equals("?") ? "игрок (ник не записан — блок поставлен на версии 1.0.6)" : "§a" + info.who() + "§r";
+            String who = info.who().equals("?") ? "игрок (ник не записан — блок поставлен на версии 1.0.8)" : "§a" + info.who() + "§r";
             Bot.msg(what + " поставил " + who + (info.time() > 0 ? ", " + ago(info.time()) : "") + ".");
             return;
         }
@@ -338,6 +347,81 @@ public final class Commands {
 
     public static int colorOf(String player) {
         return PLAYER_COLORS[Math.floorMod(player.toLowerCase(Locale.ROOT).hashCode(), PLAYER_COLORS.length)];
+    }
+
+    private static void cmdXray(Bot b, List<String> a) throws CommandException {
+        if (a.isEmpty()) {
+            XRay.setEnabled(!XRay.enabled);
+        } else {
+            Set<Block> chosen = new LinkedHashSet<>();
+            boolean on = true;
+            for (String w : a) {
+                String l = w.toLowerCase(Locale.ROOT);
+                if (l.matches("\\d+")) XRay.radius = Math.max(8, Math.min(64, Integer.parseInt(l)));
+                else if (l.equals("выкл") || l.equals("off") || l.equals("нет")) on = false;
+                else if (l.equals("вкл") || l.equals("on") || l.equals("да")) on = true;
+                else if (l.equals("все") || l.equals("всё") || l.equals("all")) chosen.addAll(XRay.ORES.keySet());
+                else {
+                    Set<Block> s = BlockNames.resolve(w);
+                    if (s == null) throw new CommandException("Не знаю такую руду: " + w);
+                    for (Block bl : s) if (XRay.ORES.containsKey(bl)) chosen.add(bl);
+                }
+            }
+            if (!chosen.isEmpty()) {
+                XRay.targets.clear();
+                XRay.targets.addAll(chosen);
+            }
+            XRay.setEnabled(on);
+        }
+        Bot.msg(XRay.enabled
+                ? "X-Ray §aвкл§r: " + BlockNames.describe(XRay.targets) + ", радиус " + XRay.radius
+                + ". §7На серверах это чит; anti-xray может показывать фальшивые руды."
+                : "X-Ray §7выкл§r.");
+    }
+
+    private static void cmdGlow(Bot b, List<String> a) {
+        String what = a.isEmpty() ? "игроки" : a.get(0).toLowerCase(Locale.ROOT);
+        switch (what) {
+            case "игроки", "players", "игроков" -> Highlights.players = !Highlights.players;
+            case "мобы", "mobs", "монстры", "мобов" -> Highlights.mobs = !Highlights.mobs;
+            case "животные", "animals", "животных" -> Highlights.animals = !Highlights.animals;
+            case "все", "all", "всё" -> Highlights.players = Highlights.mobs = Highlights.animals = true;
+            case "выкл", "off", "нет", "0" -> Highlights.players = Highlights.mobs = Highlights.animals = false;
+            default -> {
+                Bot.msg("Что подсветить: игроки, мобы, животные, все или выкл.");
+                return;
+            }
+        }
+        Bot.msg("Подсветка: игроки " + onOff(Highlights.players) + ", мобы " + onOff(Highlights.mobs)
+                + ", животные " + onOff(Highlights.animals));
+        if (Highlights.players) Bot.msg(playersNearby(b));
+    }
+
+    private static String onOff(boolean v) {
+        return v ? "§aвкл§r" : "§7выкл§r";
+    }
+
+    /** "Steve — 23 м" lines for every other player the client can see. */
+    public static String playersNearby(Bot b) {
+        var me = b.mc.player;
+        List<String> lines = new ArrayList<>();
+        for (var pl : b.mc.level.players()) {
+            if (pl == me) continue;
+            String n = pl.getName().getString();
+            lines.add(String.format("§%s■§r %s — %d м", colorCode(colorOf(n)), n, (int) Math.round(pl.distanceTo(me))));
+        }
+        return lines.isEmpty() ? "Других игроков рядом не видно." : "Игроки рядом:\n" + String.join("\n", lines);
+    }
+
+    /** All command names and aliases, for the menu's autocomplete. */
+    public static List<String> names() {
+        return new ArrayList<>(BY_NAME.keySet());
+    }
+
+    /** Usage line ("копай <блок...> [кол-во]") of a command name or alias, or null. */
+    public static String usageOf(String name) {
+        Cmd c = BY_NAME.get(name.toLowerCase(Locale.ROOT).replace('ё', 'е'));
+        return c == null ? null : c.usage();
     }
 
     private static void cmdWhose(Bot b, List<String> a) throws CommandException {

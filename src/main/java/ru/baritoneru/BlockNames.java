@@ -98,6 +98,11 @@ public final class BlockNames {
     }
 
     /** null if the word means nothing. */
+    /** Every known word (Russian and English), for the menu's autocomplete. */
+    public static java.util.List<String> words() {
+        return new java.util.ArrayList<>(WORDS.keySet());
+    }
+
     public static Set<Block> resolve(String word) {
         String w = word.toLowerCase(Locale.ROOT).replace('ё', 'е');
         Supplier<Set<Block>> s = WORDS.get(w);

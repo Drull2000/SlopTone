@@ -9,8 +9,8 @@ Commands are typed in chat with `#` — in Russian or English.
 ## Install / Установка
 
 1. Install Forge 26.3 (66.0.2 or newer). / Установи Forge 26.3 (66.0.2 или новее).
-2. Download `sloptone-1.0.6.jar` from [Releases](../../releases) and put it into `.minecraft/mods`.
-   / Скачай `sloptone-1.0.6.jar` из [Releases](../../releases) и положи в `.minecraft/mods`.
+2. Download `sloptone-1.0.8.jar` from [Releases](../../releases) and put it into `.minecraft/mods`.
+   / Скачай `sloptone-1.0.8.jar` из [Releases](../../releases) и положи в `.minecraft/mods`.
 3. Join a world and type `#help` (or `#помощь`). / Зайди в мир и напиши `#помощь`.
 
 ## Commands / Команды
@@ -29,6 +29,36 @@ Commands are typed in chat with `#` — in Russian or English.
 | `#set [name] [value]` | `#настройка [имя] [значение]` | settings / настройки |
 | `#who` | `#кто` | who placed the block under the crosshair, and when / кто и когда поставил блок под прицелом |
 | `#whose [name] [radius]` | `#чьи [ник] [радиус]` | highlight blocks placed by players nearby / подсветить блоки игроков рядом |
+| `#glow [players\|mobs\|animals\|all\|off]` | `#подсветка …` | outline players/mobs through walls / контур сквозь стены |
+| `#xray [on\|off\|all\|ores…] [radius]` | `#xray алмазы золото` | ore X-Ray / подсветка руд сквозь стены |
+| `#log [count]` | `#логи` | server command log (ops, SlopTone on the server) / журнал команд сервера |
+
+## Menu / Меню — `Insert`
+
+![menu](docs/menu-mining.png)
+
+Compact menu with smooth animations: drag it by the header, resize from the bottom-right corner,
+switch **RU | EN** in the header. Tabs: Movement, Mining (with X-Ray), Players, Waypoints, **Logs**, Settings.
+The command line at the bottom autocompletes commands, blocks, waypoints, players and settings
+(Tab / Enter / ↑↓ history). The key can be changed in Controls → SlopTone.
+
+Компактное меню с плавными анимациями: тащи за шапку, меняй размер за правый нижний угол, RU | EN в шапке.
+
+## Logs / Логи
+
+![logs](docs/logs.png)
+
+A console-style log of everything the client receives: chat, system messages, players joining/leaving and
+changing game mode, blocks other players place/break, admin command feedback (sent to ops), bot messages.
+Filters, copy to clipboard, and `config/sloptone/logs/YYYY-MM-DD.log`.
+With SlopTone on the server, ops can also read the server's command log (`/sloptone log`).
+
+## X-Ray
+
+![xray](docs/xray.png)
+
+Ores get a coloured outline visible through walls (client-only block displays, nothing is sent to the server).
+**Using it on servers is cheating and can get you banned; anti-xray servers will show fake ores.**
 
 Russian block names work too: `алмазы`, `железо`, `золото`, `уголь`, `дерево`, `незерит`…
 Tree species too / породы деревьев: `береза`, `дуб`, `ель`, `акация`, `темный дуб`, `бледный дуб`, `вишня`,
@@ -81,7 +111,7 @@ No Gradle needed: `build.ps1` compiles against the Forge 26.3 install of the loc
 ./build.ps1
 ```
 
-The jar is written to `build/sloptone-1.0.6.jar`.
+The jar is written to `build/sloptone-1.0.8.jar`.
 
 ## License / Лицензия
 
