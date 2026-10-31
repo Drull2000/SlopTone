@@ -1,4 +1,5 @@
 {
-  "key.sloptone.menu": "Меню SlopTone",
+  "key.sloptone.open": "Меню SlopTone",
+  "key.sloptone.open_alt": "Меню SlopTone (запасная клавиша)",
   "key.category.sloptone.main": "SlopTone"
 }

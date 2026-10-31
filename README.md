@@ -9,8 +9,8 @@ Commands are typed in chat with `#` — in Russian or English.
 ## Install / Установка
 
 1. Install Forge 26.3 (66.0.2 or newer). / Установи Forge 26.3 (66.0.2 или новее).
-2. Download `sloptone-1.0.8.jar` from [Releases](../../releases) and put it into `.minecraft/mods`.
-   / Скачай `sloptone-1.0.8.jar` из [Releases](../../releases) и положи в `.minecraft/mods`.
+2. Download `sloptone-1.0.9.jar` from [Releases](../../releases) and put it into `.minecraft/mods`.
+   / Скачай `sloptone-1.0.9.jar` из [Releases](../../releases) и положи в `.minecraft/mods`.
 3. Join a world and type `#help` (or `#помощь`). / Зайди в мир и напиши `#помощь`.
 
 ## Commands / Команды
@@ -33,16 +33,24 @@ Commands are typed in chat with `#` — in Russian or English.
 | `#xray [on\|off\|all\|ores…] [radius]` | `#xray алмазы золото` | ore X-Ray / подсветка руд сквозь стены |
 | `#log [count]` | `#логи` | server command log (ops, SlopTone on the server) / журнал команд сервера |
 
-## Menu / Меню — `Insert`
+## Menu / Меню — `Right Shift`, `Insert` or `#menu`
 
 ![menu](docs/menu-mining.png)
 
+Open with **Right Shift** (default), **Insert** (second key) or the `#menu` / `#меню` chat command.
 Compact menu with smooth animations: drag it by the header, resize from the bottom-right corner,
-switch **RU | EN** in the header. Tabs: Movement, Mining (with X-Ray), Players, Waypoints, **Logs**, Settings.
+switch **RU | EN** in the header. It scales itself to your screen resolution.
+Tabs: Movement, Mining (with X-Ray), Players, Waypoints, **Logs**, Settings.
 The command line at the bottom autocompletes commands, blocks, waypoints, players and settings
-(Tab / Enter / ↑↓ history). The key can be changed in Controls → SlopTone.
+(Tab / Enter / ↑↓ history).
 
-Компактное меню с плавными анимациями: тащи за шапку, меняй размер за правый нижний угол, RU | EN в шапке.
+Открывается **правым Shift**, **Insert** или командой `#меню`. Тащи за шапку, меняй размер за правый нижний угол,
+RU | EN в шапке; размер сам подстраивается под экран.
+
+![settings](docs/settings.png)
+
+**Settings → Interface / Настройки → Интерфейс:** menu key (press to rebind), 7 accent colours, fit-to-screen or
+manual scale ×0.5–×3, background opacity, animations on/off, reset window.
 
 ## Logs / Логи
 
@@ -111,7 +119,7 @@ No Gradle needed: `build.ps1` compiles against the Forge 26.3 install of the loc
 ./build.ps1
 ```
 
-The jar is written to `build/sloptone-1.0.8.jar`.
+The jar is written to `build/sloptone-1.0.9.jar`.
 
 ## License / Лицензия
 

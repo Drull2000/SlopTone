@@ -38,8 +38,13 @@ import static ru.baritoneru.gui.Ui.t;
  */
 public final class SlopScreen extends Screen {
     // palette: dark glass with a violet → cyan accent
-    private static final int PANEL = 0xF2121520, SIDE = 0xF20D1017, CARD = 0xFF191D28, CARD_HOVER = 0xFF232838;
-    private static final int LINE = 0xFF272C3A, ACCENT = 0xFF8B5CF6, ACCENT2 = 0xFF22D3EE, ACCENT_SOFT = 0x388B5CF6;
+    private static final int CARD = 0xFF191D28, CARD_HOVER = 0xFF232838, LINE = 0xFF272C3A;
+    // customisable (Settings → Interface): set at the start of every frame
+    private int PANEL = 0xF2121520, SIDE = 0xF20D1017, ACCENT = 0xFF8B5CF6, ACCENT2 = 0xFF22D3EE, ACCENT_SOFT = 0x388B5CF6;
+    /** menu scale (menu units → GUI pixels) and the screen size in menu units */
+    private float S = 1f;
+    private int vw, vh;
+    private boolean waitingKey;
     private static final int TEXT = 0xFFE9EBF3, MUTED = 0xFF8C92A5, FAINT = 0xFF555B6C, RED = 0xFFF05252, GREEN = 0xFF34D399;
     private static final int OFF = 0xFF353B4A, AMBER = 0xFFF59E0B, CONSOLE = 0xFF0A0C11;
     private static final int MIN_W = 330, MIN_H = 210;
@@ -127,12 +132,14 @@ public final class SlopScreen extends Screen {
     // ================================================================ animation helpers
 
     private static float ease(float t) {
+        if (!Ui.animations) return 1f;
         t = Math.max(0, Math.min(1, t));
         return 1 - (1 - t) * (1 - t) * (1 - t);
     }
 
     /** smoothly follows a target value per element id */
     private float anim(String id, float target, float speed) {
+        if (!Ui.animations) return target;
         float v = anim.getOrDefault(id, target);
         v += (target - v) * Math.min(1f, dt * speed);
         if (Math.abs(target - v) < 0.002f) v = target;
@@ -185,6 +192,31 @@ public final class SlopScreen extends Screen {
         }
     }
 
+    /** colours from Settings → Interface */
+    private void applyTheme() {
+        Ui.Accent ac = Ui.accent();
+        ACCENT = ac.main();
+        ACCENT2 = ac.second();
+        ACCENT_SOFT = 0x38000000 | (ac.main() & 0xFFFFFF);
+        int alpha = Math.max(40, Math.min(255, Math.round(Ui.opacity * 2.55f)));
+        PANEL = alpha << 24 | 0x121520;
+        SIDE = alpha << 24 | 0x0D1017;
+    }
+
+    /**
+     * Picks a scale so the menu is comfortable on any monitor: about the same physical size
+     * whatever the resolution and GUI scale (big monitors with a small GUI scale get a bigger menu).
+     */
+    private float autoScale() {
+        float s = width / 720f;
+        s = Math.max(1f, Math.min(2.5f, s));
+        return Math.round(s * 4) / 4f; // steps of 0.25 keep the pixel font crisp enough
+    }
+
+    private static String keyName(net.minecraft.client.KeyMapping k) {
+        return k.isUnbound() ? "—" : k.getTranslatedKeyMessage().getString();
+    }
+
     // ================================================================ drawing
 
     @Override
@@ -205,18 +237,24 @@ public final class SlopScreen extends Screen {
             return;
         }
         alphaMul = openAnim;
-        mouseX = mx;
-        mouseY = my;
+        applyTheme();
+        // scale: the menu is laid out in "menu units" and drawn S times bigger, so it fits any screen
+        S = Ui.autoScale ? autoScale() : Math.max(0.5f, Math.min(3f, Ui.scale));
+        vw = Math.round(width / S);
+        vh = Math.round(height / S);
+        mouseX = Math.round(mx / S);
+        mouseY = Math.round(my / S);
         hits.clear();
         contentHits.clear();
         Font font = getFont();
 
-        // geometry (user-movable, clamped to the screen)
-        int w = Math.max(MIN_W, Math.min(width - 8, Ui.winW)), h = Math.max(MIN_H, Math.min(height - 8, Ui.winH));
-        w = Math.min(w, width - 8);
-        h = Math.min(h, height - 8);
-        x0 = Ui.winX < 0 ? (width - w) / 2 : Math.max(4, Math.min(width - w - 4, Ui.winX));
-        y0 = Ui.winY < 0 ? (height - h) / 2 : Math.max(4, Math.min(height - h - 4, Ui.winY));
+        // geometry (user-movable, clamped to the screen); -1 = automatic size, 70% of the screen
+        int autoW = Math.min(640, Math.round(vw * 0.7f)), autoH = Math.min(400, Math.round(vh * 0.72f));
+        int w = Ui.winW < 0 ? autoW : Ui.winW, h = Ui.winH < 0 ? autoH : Ui.winH;
+        w = Math.max(Math.min(MIN_W, vw - 8), Math.min(vw - 8, w));
+        h = Math.max(Math.min(MIN_H, vh - 8), Math.min(vh - 8, h));
+        x0 = Ui.winX < 0 ? (vw - w) / 2 : Math.max(4, Math.min(vw - w - 4, Ui.winX));
+        y0 = Ui.winY < 0 ? (vh - h) / 2 : Math.max(4, Math.min(vh - h - 4, Ui.winY));
         x1 = x0 + w;
         y1 = y0 + h;
         int header = 24, side = 96, footer = 42;
@@ -229,6 +267,7 @@ public final class SlopScreen extends Screen {
         float s = 0.94f + 0.06f * openAnim;
         float cx = (x0 + x1) / 2f, cy = (y0 + y1) / 2f;
         g.pose().pushMatrix();
+        g.pose().scale(S, S);
         g.pose().translate(cx, cy);
         g.pose().scale(s, s);
         g.pose().translate(-cx, -cy);
@@ -287,7 +326,7 @@ public final class SlopScreen extends Screen {
         }
         text(g, "Slop", x0 + 10, y0 + 9, ACCENT);
         text(g, "Tone", x0 + 10 + font.width("Slop"), y0 + 9, TEXT);
-        text(g, "1.0.8", x0 + 14 + font.width("SlopTone"), y0 + 9, FAINT);
+        text(g, "1.0.9", x0 + 14 + font.width("SlopTone"), y0 + 9, FAINT);
 
         Bot bot = Bot.get();
         boolean active = bot.process() != null, paused = bot.isPaused();
@@ -357,8 +396,8 @@ public final class SlopScreen extends Screen {
             hits.add(new Hit(x0, cy, side, 18, () -> switchTab(target)));
             cy += 21;
         }
-        text(g, "Ins / Esc", x0 + 10, y1 - 30, FAINT);
-        text(g, t("закрыть", "close"), x0 + 10, y1 - 19, 0xFF40455A);
+        text(g, font.plainSubstrByWidth(keyName(ru.baritoneru.ClientInit.MENU_KEY), side - 14), x0 + 10, y1 - 30, FAINT);
+        text(g, font.plainSubstrByWidth("Esc — " + t("закрыть", "close"), side - 14), x0 + 10, y1 - 19, 0xFF40455A);
     }
 
     private void switchTab(Cat c) {
@@ -621,6 +660,60 @@ public final class SlopScreen extends Screen {
     }
 
     private int drawSettings(GuiGraphicsExtractor g, int y) {
+        y = section(g, y, t("Интерфейс", "Interface"));
+        // menu key
+        String keyLabel = waitingKey ? t("нажми клавишу…  (Esc — отмена)", "press a key…  (Esc — cancel)")
+                : keyName(ru.baritoneru.ClientInit.MENU_KEY) + t("  ·  запасная: ", "  ·  second: ") + keyName(ru.baritoneru.ClientInit.MENU_KEY_ALT);
+        y = card(g, y, t("Клавиша меню", "Menu key"), keyLabel, true, () -> waitingKey = true);
+        // accent colours
+        g.text(getFont(), t("Цвет акцента", "Accent colour"), contentLeft + 12, y + 2, ca(MUTED), false);
+        y += 13;
+        int x = contentLeft + 8;
+        for (int i = 0; i < Ui.ACCENTS.length; i++) {
+            Ui.Accent ac = Ui.ACCENTS[i];
+            String name = Ui.en ? ac.en() : ac.ru();
+            int w = getFont().width(name) + 20;
+            if (x + w > x1 - 10) {
+                x = contentLeft + 8;
+                y += 18;
+            }
+            boolean on = Math.floorMod(Ui.accent, Ui.ACCENTS.length) == i;
+            float h = hover("acc" + i, inContent(x, y, w, 15));
+            round(g, x, y, w, 15, 2, ca(on ? lerp(CARD_HOVER, ac.main(), 0.35f) : lerp(CARD, CARD_HOVER, h)));
+            round(g, x + 4, y + 4, 7, 7, 1, ca(ac.main()));
+            round(g, x + 8, y + 8, 4, 4, 1, ca(ac.second()));
+            g.text(getFont(), name, x + 15, y + 4, ca(on ? 0xFFFFFFFF : MUTED), false);
+            final int idx = i;
+            contentHits.add(new Hit(x, y, w, 15, () -> {
+                Ui.accent = idx;
+                Ui.save();
+            }));
+            x += w + 4;
+        }
+        y += 21;
+        y = toggle(g, y, t("Подстраивать под экран", "Fit to screen"),
+                t("масштаб считается от разрешения монитора, сейчас ×", "scale follows the monitor resolution, now ×") + fmt(S),
+                () -> Ui.autoScale, () -> {
+                    if (Ui.autoScale) Ui.scale = S; // keep the current look when switching to manual
+                    Ui.autoScale = !Ui.autoScale;
+                    Ui.save();
+                });
+        if (!Ui.autoScale) {
+            y = stepperText(g, y, t("Масштаб меню", "Menu scale"), "×0.5 – ×3", "×" + fmt(Ui.scale),
+                    () -> { Ui.scale = Math.max(0.5f, Ui.scale - 0.25f); Ui.save(); },
+                    () -> { Ui.scale = Math.min(3f, Ui.scale + 0.25f); Ui.save(); });
+        }
+        y = stepperText(g, y, t("Непрозрачность фона", "Background opacity"), "40–100%", Ui.opacity + "%",
+                () -> { Ui.opacity = Math.max(40, Ui.opacity - 5); Ui.save(); },
+                () -> { Ui.opacity = Math.min(100, Ui.opacity + 5); Ui.save(); });
+        y = toggle(g, y, t("Анимации", "Animations"), t("плавное открытие, наведение и прокрутка", "smooth opening, hover and scrolling"),
+                () -> Ui.animations, () -> {
+                    Ui.animations = !Ui.animations;
+                    Ui.save();
+                });
+        y = card(g, y, t("Сбросить окно", "Reset window"), t("вернуть размер и положение по умолчанию", "default size and position"),
+                false, Ui::resetWindow);
+        y += 4;
         y = section(g, y, t("Настройки бота", "Bot settings"));
         for (Settings.Entry e : Settings.ENTRIES.values()) {
             Object v = e.get().get();
@@ -720,7 +813,15 @@ public final class SlopScreen extends Screen {
         return y + rh + 3;
     }
 
+    private static String fmt(float f) {
+        return f == Math.round(f) ? String.valueOf(Math.round(f)) : String.valueOf(Math.round(f * 100) / 100f);
+    }
+
     private int stepper(GuiGraphicsExtractor g, int y, String title, String desc, int value, Runnable minus, Runnable plus) {
+        return stepperText(g, y, title, desc, String.valueOf(value), minus, plus);
+    }
+
+    private int stepperText(GuiGraphicsExtractor g, int y, String title, String desc, String value, Runnable minus, Runnable plus) {
         int rx = contentLeft + 8, rw = x1 - rx - 10, rh = 24;
         float h = hover("st" + title, inContent(rx, y, rw, rh));
         round(g, rx, y, rw, rh, 2, ca(lerp(CARD, CARD_HOVER, h)));
@@ -873,7 +974,7 @@ public final class SlopScreen extends Screen {
     @Override
     public boolean mouseClicked(MouseButtonEvent e, boolean doubleClick) {
         if (closing) return true;
-        double mx = e.x(), my = e.y();
+        double mx = e.x() / S, my = e.y() / S;
         // resize grip
         if (mx >= x1 - 10 && my >= y1 - 10 && mx < x1 + 2 && my < y1 + 2) {
             resizing = true;
@@ -911,14 +1012,19 @@ public final class SlopScreen extends Screen {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent e, double dx, double dy) {
+        double ex = e.x() / S, ey = e.y() / S;
         if (dragging) {
-            Ui.winX = (int) Math.round(dragX + e.x() - dragMX);
-            Ui.winY = (int) Math.round(dragY + e.y() - dragMY);
+            Ui.winX = (int) Math.round(dragX + ex - dragMX);
+            Ui.winY = (int) Math.round(dragY + ey - dragMY);
+            if (Ui.winW < 0) { // freeze the automatic size once the user moves the window
+                Ui.winW = dragW;
+                Ui.winH = dragH;
+            }
             return true;
         }
         if (resizing) {
-            Ui.winW = Math.max(MIN_W, (int) Math.round(dragW + e.x() - dragMX));
-            Ui.winH = Math.max(MIN_H, (int) Math.round(dragH + e.y() - dragMY));
+            Ui.winW = Math.max(MIN_W, (int) Math.round(dragW + ex - dragMX));
+            Ui.winH = Math.max(MIN_H, (int) Math.round(dragH + ey - dragMY));
             if (Ui.winX < 0) {
                 Ui.winX = dragX;
                 Ui.winY = dragY;
@@ -938,7 +1044,8 @@ public final class SlopScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double sx, double sy) {
+    public boolean mouseScrolled(double rmx, double rmy, double sx, double sy) {
+        double mx = rmx / S, my = rmy / S;
         if (mx >= contentLeft && mx < x1 && my >= contentTop && my < contentBottom) {
             if (cat == Cat.LOGS) logScroll += (float) sy * 3;
             else scrollTarget -= (float) sy * 22;
@@ -949,7 +1056,23 @@ public final class SlopScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent e) {
         int k = e.key();
-        if (k == InputConstants.KEY_ESCAPE || k == InputConstants.KEY_INSERT) {
+        if (waitingKey) { // rebinding the menu key (Settings → Interface)
+            waitingKey = false;
+            if (k != InputConstants.KEY_ESCAPE) {
+                var mc = Bot.get().mc;
+                ru.baritoneru.ClientInit.MENU_KEY.setKey(InputConstants.getKey(e));
+                net.minecraft.client.KeyMapping.resetMapping();
+                mc.options.save();
+                Bot.msg(t("Клавиша меню: ", "Menu key: ") + keyName(ru.baritoneru.ClientInit.MENU_KEY));
+            }
+            return true;
+        }
+        if (k == InputConstants.KEY_ESCAPE) {
+            onClose();
+            return true;
+        }
+        // the menu keys close the menu too, unless you are typing (Right Shift is also used for capitals)
+        if (input.isEmpty() && (ru.baritoneru.ClientInit.MENU_KEY.matches(e) || ru.baritoneru.ClientInit.MENU_KEY_ALT.matches(e))) {
             onClose();
             return true;
         }

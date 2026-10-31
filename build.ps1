@@ -1,4 +1,4 @@
-# Builds sloptone-1.0.8.jar against the Forge 26.3 install of the local launcher (no Gradle needed).
+# Builds sloptone-1.0.9.jar against the Forge 26.3 install of the local launcher (no Gradle needed).
 $ErrorActionPreference = 'Stop'
 $mc   = "$env:APPDATA\.minecraft"
 $jdk  = "$mc\runtime\java-runtime-epsilon\windows\java-runtime-epsilon\bin"
@@ -36,7 +36,7 @@ Get-ChildItem "$out\classes\ru\baritoneru\mixin" -Filter *.class | ForEach-Objec
 Copy-Item -Recurse "$root\src\main\resources\*" "$out\classes\"
 Copy-Item "$root\LICENSE.txt", "$root\LICENSE_RU.txt" "$out\classes\"
 "MixinConfigs: sloptone.mixins.json" | Set-Content -Encoding ascii "$out\MANIFEST.MF"
-$jar = "$out\sloptone-1.0.8.jar"
+$jar = "$out\sloptone-1.0.9.jar"
 & "$jdk\jar.exe" --create --file $jar --manifest "$out\MANIFEST.MF" -C "$out\classes" .
 if ($LASTEXITCODE -ne 0) { throw "jar failed" }
 Write-Host "Built $jar"
