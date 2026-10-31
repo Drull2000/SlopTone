@@ -1,8 +1,8 @@
 package ru.baritoneru;
 
-import net.minecraftforge.client.event.ClientChatEvent;
-import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,13 +12,11 @@ public final class BaritoneRu {
     public static final Logger LOG = LogManager.getLogger("SlopTone");
 
     public BaritoneRu() {
-        LOG.info("SlopTone: constructing");
+        LOG.info("SlopTone: constructing ({})", FMLEnvironment.dist);
         Settings.load();
-        TickEvent.ClientTickEvent.Pre.BUS.addListener(e -> Bot.get().tick());
-        TickEvent.ClientTickEvent.Post.BUS.addListener(e -> Bot.get().postTick());
-        // returning true cancels the chat message, so commands are never sent to the server
-        ClientChatEvent.BUS.addListener((ClientChatEvent e) -> Commands.handleChat(e.getMessage()));
-        PlacedBlocks.register();
-        LOG.info("SlopTone: listeners registered, command prefix '{}'", Settings.prefix);
+        // the "who placed this block" records work on dedicated servers too
+        ServerRecorder.register();
+        // everything else is the bot, which only exists on the client
+        if (FMLEnvironment.dist == Dist.CLIENT) ClientInit.init();
     }
 }

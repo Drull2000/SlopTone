@@ -1,4 +1,4 @@
-# Builds sloptone-1.0.5.jar against the Forge 26.3 install of the local launcher (no Gradle needed).
+# Builds sloptone-1.0.6.jar against the Forge 26.3 install of the local launcher (no Gradle needed).
 $ErrorActionPreference = 'Stop'
 $mc   = "$env:APPDATA\.minecraft"
 $jdk  = "$mc\runtime\java-runtime-epsilon\windows\java-runtime-epsilon\bin"
@@ -27,7 +27,7 @@ if ($LASTEXITCODE -ne 0) { throw "javac failed" }
 
 Copy-Item -Recurse "$root\src\main\resources\*" "$out\classes\"
 Copy-Item "$root\LICENSE.txt", "$root\LICENSE_RU.txt" "$out\classes\"
-$jar = "$out\sloptone-1.0.5.jar"
+$jar = "$out\sloptone-1.0.6.jar"
 & "$jdk\jar.exe" --create --file $jar -C "$out\classes" .
 if ($LASTEXITCODE -ne 0) { throw "jar failed" }
 Write-Host "Built $jar"

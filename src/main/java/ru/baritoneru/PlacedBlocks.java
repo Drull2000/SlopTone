@@ -144,13 +144,72 @@ public final class PlacedBlocks {
         PENDING.add(new Pending(new BlockPos[]{p, p.relative(hit.getDirection())}, bi.getBlock(), 6));
     }
 
-    /** Client tick: confirm pending placements, load and save the file. */
+    // ---------------------------------------------------------------- other players (works on any server)
+
+    /** a spot another player is looking at, and what was there before */
+    private record Watch(String who, int playerId, BlockState before, long expires) {}
+
+    private static final Map<Long, Watch> WATCH = new java.util.HashMap<>();
+    private static final Map<Integer, Long> LAST_SWING = new java.util.HashMap<>();
+    private static long clientTicks;
+
+    /**
+     * The client never learns who placed a block, but it does see other players swing their arm and the block
+     * appear where they were looking. Watch the spots players look at; when an empty spot gets a block within a
+     * few ticks of that player swinging, it was them.
+     */
+    private static void observeOthers(Minecraft mc) {
+        clientTicks++;
+        for (var pl : mc.level.players()) {
+            if (pl == mc.player || pl.distanceToSqr(mc.player) > 96 * 96) continue;
+            if (pl.isSwinging()) LAST_SWING.put(pl.getId(), clientTicks);
+            if (!(pl.pick(pl.blockInteractionRange(), 1.0f, false) instanceof BlockHitResult hit)
+                    || hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) continue;
+            String name = pl.getName().getString();
+            for (BlockPos c : new BlockPos[]{hit.getBlockPos(), hit.getBlockPos().relative(hit.getDirection())}) {
+                BlockState s = mc.level.getBlockState(c);
+                if (!s.canBeReplaced()) continue; // only empty / replaceable spots can receive a placed block
+                WATCH.put(c.asLong(), new Watch(name, pl.getId(), s, clientTicks + 8));
+            }
+        }
+        for (var it = WATCH.entrySet().iterator(); it.hasNext(); ) {
+            var e = it.next();
+            Watch w = e.getValue();
+            BlockState now = mc.level.getBlockState(BlockPos.of(e.getKey()));
+            if (now != w.before() && !now.canBeReplaced() && now.getFluidState().isEmpty()) {
+                Long swung = LAST_SWING.get(w.playerId());
+                if (swung != null && clientTicks - swung <= 8) {
+                    add(Waypoints.world(), BlockPos.of(e.getKey()), w.who());
+                }
+                it.remove();
+            } else if (clientTicks > w.expires()) {
+                it.remove();
+            }
+        }
+        if (clientTicks % 1200 == 0) LAST_SWING.values().removeIf(t -> clientTicks - t > 1200);
+    }
+
+    /** Blocks within radius of center with known placers, optionally only one player's. */
+    public static Map<BlockPos, Info> near(BlockPos center, int radius, String player) {
+        Map<BlockPos, Info> out = new java.util.LinkedHashMap<>();
+        long r2 = (long) radius * radius;
+        for (var e : map(Waypoints.world()).entrySet()) {
+            BlockPos p = BlockPos.of(e.getKey());
+            if (p.distSqr(center) > r2) continue;
+            if (player != null && !e.getValue().who().equalsIgnoreCase(player)) continue;
+            out.put(p, e.getValue());
+        }
+        return out;
+    }
+
+    /** Client tick: confirm pending placements, watch other players, load and save the file. */
     public static void tick() {
         Minecraft mc = Minecraft.getInstance();
         if (!loaded) {
             loaded = true;
             load();
         }
+        if (mc.level != null && mc.player != null) observeOthers(mc);
         if (mc.level != null && !PENDING.isEmpty()) {
             List<Pending> next = new ArrayList<>();
             for (Pending p : PENDING) {

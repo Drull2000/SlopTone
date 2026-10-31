@@ -84,7 +84,11 @@ public final class Bot {
         if (tickCount == 1) BaritoneRu.LOG.info("SlopTone: first in-world tick");
         // test hook: -Dsloptone.autorun="#cmd1;#cmd2" sends these through the real chat path
         String auto = System.getProperty("sloptone.autorun");
-        if (auto != null && tickCount == 100) for (String s : auto.split(";")) p.connection.sendChat(s.trim());
+        if (auto != null && tickCount == 100) for (String s : auto.split(";")) {
+            s = s.trim();
+            if (s.startsWith("/")) p.connection.sendCommand(s.substring(1));
+            else p.connection.sendChat(s);
+        }
         controls.clear();
         waypoints.tick(this);
         PlacedBlocks.tick();
@@ -128,6 +132,7 @@ public final class Bot {
         }
         controls.apply();
         if (Settings.renderPath && tickCount % 5 == 0) renderPath();
+        if (tickCount % 5 == 0) renderHighlight();
     }
 
     public void postTick() {
@@ -172,6 +177,29 @@ public final class Bot {
     }
 
     // ------------------------------------------------------------------ rendering
+
+    private java.util.Map<BlockPos, PlacedBlocks.Info> highlighted = java.util.Map.of();
+    private int highlightTicks;
+
+    /** Shows coloured particles over these blocks (one colour per player) for a while. */
+    public void highlight(java.util.Map<BlockPos, PlacedBlocks.Info> blocks, int ticks) {
+        highlighted = blocks;
+        highlightTicks = ticks;
+    }
+
+    private void renderHighlight() {
+        if (highlightTicks <= 0) return;
+        highlightTicks -= 5;
+        int n = 0;
+        for (var e : highlighted.entrySet()) {
+            if (++n > 400) break;
+            BlockPos p = e.getKey();
+            if (mc.level.getBlockState(p).isAir()) continue;
+            var dust = new net.minecraft.core.particles.DustParticleOptions(Commands.colorOf(e.getValue().who()), 1.2f);
+            mc.level.addParticle(dust, p.getX() + 0.5, p.getY() + 1.15, p.getZ() + 0.5, 0, 0, 0);
+            mc.level.addParticle(dust, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5, 0, 0, 0);
+        }
+    }
 
     private void renderPath() {
         BotPath path = pathing.path();

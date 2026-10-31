@@ -87,9 +87,11 @@ public final class Commands {
                 Commands::cmdSet, "set", "setting", "settings", "настройка", "настройки", "опция");
         reg("кто", "кто поставил блок, на который смотрит прицел", Commands::cmdWho,
                 "who", "owner", "кто", "чей", "ктопоставил");
+        reg("чьи [ник] [радиус]", "подсветить блоки, поставленные игроками рядом", Commands::cmdWhose,
+                "whose", "builds", "чьи", "постройки", "подсветить");
         reg("статус", "что сейчас делаю", (b, a) -> Bot.msg(b.status()), "status", "proc", "статус", "что");
         reg("помощь", "список команд", (b, a) -> help(), "help", "помощь", "справка", "команды", "?");
-        reg("версия", "версия мода", (b, a) -> Bot.msg("SlopTone 1.0.5 by manstruk, Minecraft 26.3 (Forge)"), "version", "версия");
+        reg("версия", "версия мода", (b, a) -> Bot.msg("SlopTone 1.0.6 by manstruk, Minecraft 26.3 (Forge)"), "version", "версия");
     }
 
     /** @return true when the message was a bot command (it is then not sent to the server). */
@@ -305,7 +307,7 @@ public final class Commands {
         String what = "§e" + state.getBlock().getName().getString() + "§r на " + pos.toShortString();
         PlacedBlocks.Info info = PlacedBlocks.info(pos);
         if (info != null) {
-            String who = info.who().equals("?") ? "игрок (ник не записан — блок поставлен на версии 1.0.5)" : "§a" + info.who() + "§r";
+            String who = info.who().equals("?") ? "игрок (ник не записан — блок поставлен на версии 1.0.6)" : "§a" + info.who() + "§r";
             Bot.msg(what + " поставил " + who + (info.time() > 0 ? ", " + ago(info.time()) : "") + ".");
             return;
         }
@@ -316,8 +318,62 @@ public final class Commands {
             return;
         }
         boolean remote = b.mc.getSingleplayerServer() == null;
+        if (remote && askServer(b, "sloptone who " + pos.getX() + " " + pos.getY() + " " + pos.getZ())) {
+            Bot.msg(what + ": у меня записи нет, спрашиваю сервер…");
+            return;
+        }
         Bot.msg(what + ": записи нет. Блок природный или поставлен, когда мод не был запущен."
-                + (remote ? " На сервере видны только блоки, которые поставил ты сам." : ""));
+                + (remote ? " На этом сервере нет SlopTone, поэтому видны только твои блоки и те, что другие игроки ставили рядом с тобой." : ""));
+    }
+
+    /** Sends a /sloptone command if the server has SlopTone installed; false if it does not. */
+    private static boolean askServer(Bot b, String command) {
+        var conn = b.mc.player.connection;
+        if (conn.getCommands().getRoot().getChild("sloptone") == null) return false;
+        conn.sendCommand(command);
+        return true;
+    }
+
+    private static final int[] PLAYER_COLORS = {0xFF5555, 0x55FF55, 0x5599FF, 0xFFFF55, 0xFF55FF, 0x55FFFF, 0xFFAA00, 0xFFFFFF};
+
+    public static int colorOf(String player) {
+        return PLAYER_COLORS[Math.floorMod(player.toLowerCase(Locale.ROOT).hashCode(), PLAYER_COLORS.length)];
+    }
+
+    private static void cmdWhose(Bot b, List<String> a) throws CommandException {
+        String player = null;
+        int radius = 32;
+        for (String s : a) {
+            if (s.matches("\\d+")) radius = Math.min(256, Integer.parseInt(s));
+            else player = s;
+        }
+        var found = PlacedBlocks.near(b.controls.feet(), radius, player);
+        Map<String, Integer> counts = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        found.values().forEach(i -> counts.merge(i.who(), 1, Integer::sum));
+        if (found.isEmpty()) {
+            Bot.msg("Рядом (радиус " + radius + ") нет блоков" + (player != null ? " игрока " + player : "") + ", про которые я знаю, кто их поставил.");
+        } else {
+            StringBuilder sb = new StringBuilder("Блоки игроков в радиусе " + radius + ", подсвечиваю на 30 с:");
+            counts.forEach((n, k) -> sb.append("\n").append(String.format("§%s■§r %s — %d", colorCode(colorOf(n)), n, k)));
+            Bot.msg(sb.toString());
+            b.highlight(found, 600);
+        }
+        if (b.mc.getSingleplayerServer() == null)
+            askServer(b, "sloptone near " + radius + (player != null ? " " + player : ""));
+    }
+
+    /** closest chat colour code for the particle colour, so the legend matches */
+    private static String colorCode(int rgb) {
+        return switch (rgb) {
+            case 0xFF5555 -> "c";
+            case 0x55FF55 -> "a";
+            case 0x5599FF -> "9";
+            case 0xFFFF55 -> "e";
+            case 0xFF55FF -> "d";
+            case 0x55FFFF -> "b";
+            case 0xFFAA00 -> "6";
+            default -> "f";
+        };
     }
 
     private static String ago(long time) {
